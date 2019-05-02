@@ -1,39 +1,94 @@
-## Advanced Lane Finding
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
-![Lanes Image](./examples/example_output.jpg)
+## Advance Lane Finding
+![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)
+In this Repository resourses used provided by Udacity
+```
 
-In this project, your goal is to write a software pipeline to identify the lane boundaries in a video, but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
 
-Creating a great writeup:
----
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
+```
+## Camera Calibration
+In the camera Calibration Step we would have some test images in test folder (chessboard image) through which we have calibrate camera image or removing destortion. in this section we will find the cameraMetrix and distortionMetrix through which we can undestorted another images.
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
 
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
+![png](./writeup/camera_calibration.png)
+```
 
-The Project
----
 
-The goals / steps of this project are the following:
 
-* Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
-* Apply a distortion correction to raw images.
-* Use color transforms, gradients, etc., to create a thresholded binary image.
-* Apply a perspective transform to rectify binary image ("birds-eye view").
-* Detect lane pixels and fit to find the lane boundary.
-* Determine the curvature of the lane and vehicle position with respect to center.
-* Warp the detected lane boundaries back onto the original image.
-* Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
-The images for camera calibration are stored in the folder called `camera_cal`.  The images in `test_images` are for testing your pipeline on single frames.  If you want to extract more test images from the videos, you can simply use an image writing method like `cv2.imwrite()`, i.e., you can read the video in frame by frame as usual, and for frames you want to save for later you can write to an image file.  
+```
+## Thresholding 
+### Image Processing
+In this section we will apply some color selction and edge selection tools and we will find the best output of white and yellow lines as shown in pictute
 
-To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `output_images`, and include a description in your writeup for the project of what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
+``` Pyhton
+thres_binary=image_process(image)
 
-The `challenge_video.mp4` video is an extra (and optional) challenge for you if you want to test your pipeline under somewhat trickier conditions.  The `harder_challenge.mp4` video is another optional challenge and is brutal!
+```
 
-If you're feeling ambitious (again, totally optional though), don't stop there!  We encourage you to go out and take video of your own, calibrate your camera and show us how you would implement this project from scratch!
+![thresholding](./writeup/Image_thres.png)
+```
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 
+
+```
+## ProsPective Trasformation
+### Bird Eye View
+In this Section Image convert into bird eye view to get more information about the curve of line.
+Three is tool called wrap prospective Transformation which do this task.
+```
+warped = cv2.warpPerspective(thres_binary.astype('float32'), M, image_size,flags=cv2.INTER_LINEAR )
+
+```
+            warped Image
+
+![waraped](./writeup/warped.png)
+
+```
+
+
+
+```
+### Finding Base Line cordinates
+Using Histogram technique we will find out the lane base cordinates. The hack is where histogram having highest frequency that will be our line.
+
+![hist](./writeup/histo.png)
+```
+
+
+```
+## Sliding Window Search
+In this Section we will apply sliding window search algorithum and will find out best fit second degree polynomial
+```
+#window search and gettinig polynomial
+polyfit_left,polyfit_right,y_points,image_d =window_search(warped,leftx_base,rightx_base)
+
+#calculating x corrdinates
+left_x_predictions = polyfit_left[0]*y_points**2 + polyfit_left[1]*y_points + polyfit_left[2]
+
+right_x_predictions = polyfit_right[0]*y_points**2 + polyfit_right[1]*y_points + polyfit_right[2]
+
+```
+![window_search](./writeup/window_search.png)
+```
+
+
+
+
+```
+### Normal Line Search (line search around past lines)
+The Window search only apply when pipeline will not find the line or any bad frame. In this Code section we made 50 px boundary around the previous line, For next frames we will search line within this boundary untill bad frame comes
+
+![boundary](./writeup/boudary.png)
+
+## OutPut
+Finally we get the predicted lines now we will draw a polynomial with the help of predicted lines cordinates.
+![final](./writeup/final.png)
+
+### Issuse
+1. to get the best result of thresholding I had tune several time the threshold points and i had tried varoius combination of thresholding to get yellow and white lines
+
+2. In some Bad Frame or low light are or darker frame this code get confused and not work well
+
+### Improvement
+
+1. This code is working fine but in some case when bad frame comes in that condition we will check the we getting line or not if we not get any line the we will take help from previours detected line and will draw an avarage line 
